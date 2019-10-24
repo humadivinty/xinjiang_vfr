@@ -1,0 +1,67 @@
+#目标文件
+SRC    :=  $(shell find . -iname '*.c' -o -iname '*.cpp')
+
+OBJ := $(patsubst %.c,%.o, $(patsubst %.cpp,%.o, $(SRC))) 
+#编译选项
+
+
+#程序名
+PROGRAM = libVehRecDll.so
+
+
+CC := arm-none-linux-gnueabi-gcc
+CXX := arm-none-linux-gnueabi-g++
+AR := arm-none-linux-gnueabi-ar
+STRIP := arm-none-linux-gnueabi-strip
+#C/C++代码的宏定义
+CFLAG := -DLINUX  -D_GNU_SOURCE -Wno-psabi -O2 -fPIC -std=gnu++0x
+
+CXXFLAG := $(CFLAG)
+
+#连接库路径
+LIBPATH := ./libHvDevice
+
+BINPATH := ./bin
+
+LDFLAG := -L$(LIBPATH) -lpthread -lrt -ldl -lHvdevice	
+
+INC += -I.\
+ -I.\cameraModule \
+-I.\libAVI \
+-I.\libHvDevice \
+ -I.\tinyxml \
+-I.\utilityTool \
+
+#编译规则
+all:$(PROGRAM)
+
+#debug version
+debug:	CFLAG += -g3
+debug:	$(PROGRAM)
+
+#release version
+release:$(PROGRAM)
+
+
+
+#依赖关系
+Q := @
+W := -w
+#编译规则
+.c.o:
+	@echo "Compile $@"
+	$(Q)$(CC) $(CFLAG) -o $@ -c $< $(INC) $(W)
+
+.cpp.o:
+	@echo "Compile $@"
+	$(Q)$(CXX) $(CXXFLAG) -o $@ -c $< $(INC) $(W)
+	
+	
+$(PROGRAM):$(OBJ)
+	$(Q)$(CXX) -shared -o $(PROGRAM) $(OBJ) $(LDFLAG) -fvisibility=hidden
+#	$(Q)rm *.o
+	$(Q)mkdir -p $(BINPATH)
+	$(Q)cp $@ $(BINPATH)/$@
+
+clean:
+	$(Q)rm -rf $(PROGRAM) $(BINPATH)/$(PROGRAM) $(OBJ) 
