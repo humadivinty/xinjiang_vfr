@@ -92,11 +92,11 @@ bool MyH264Saver::addDataStruct(CustH264Struct* pDataStruct)
 bool MyH264Saver::StartSaveH264(long long beginTimeStamp, const char* pchFilePath)
 {
     //qDebug()<< "StartSaveH264 :"<< "beginTimeStamp "<< beginTimeStamp;
+	SetSavePath(pchFilePath, strlen(pchFilePath));
+	SetTimeFlag(beginTimeStamp);
+	SetStopTimeFlag(TIME_FLAG_UNDEFINE);
+	SetIfFirstSave(true); 
     SetSaveFlag(SAVING_FLAG_SAVING);
-    SetStopTimeFlag(TIME_FLAG_UNDEFINE);
-    SetIfFirstSave(true);
-    SetTimeFlag(beginTimeStamp);
-    SetSavePath(pchFilePath, strlen(pchFilePath));
 	m_lastvideoidx = -1;
     return true;
 }
