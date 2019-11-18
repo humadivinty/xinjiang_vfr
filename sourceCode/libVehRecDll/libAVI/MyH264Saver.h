@@ -8,6 +8,7 @@
 #include <deque>
 #include "utilityTool/tool_function.h"
 
+#define VIDEO_FRAME_LIST_SIZE (3000)
 
 #define SAVING_FLAG_NOT_SAVE 0
 #define SAVING_FLAG_SAVING 1
@@ -31,7 +32,7 @@ public:
 #endif
     unsigned long processH264Data();
     unsigned long processH264Data_old();
-
+    unsigned long processH264Data_0();
 private:
     void SetIfExit(bool bValue);
     bool GetIfExit();

@@ -232,3 +232,12 @@ void SetCarInfoCallback()
     int iRet = VehRec_SetCarDataFun(g_iHandle, (VehRec_GetCarDataFun*)(&VehRec_GetCarDataFun_demo));
     printf("VehRec_SetCarDataFun(%d, %p) finish, return code = %d \n", g_iHandle, VehRec_GetCarDataFun_demo, iRet);
 }
+
+void CheckCameraStatus()
+{
+    printf("begin to DLL_VehRec_CheckStatus \n");
+    char chStatus[256] = {0};
+    memset(chStatus, '\0', sizeof(chStatus));
+    int iRet = VehRec_CheckStatus (g_iHandle,chStatus);
+    printf("VehRec_CheckStatus(%d) finish, return code = %d, Device Status = %s \n", g_iHandle,  iRet, chStatus);
+}

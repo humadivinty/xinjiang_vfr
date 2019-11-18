@@ -19,6 +19,9 @@
 //#include"commondef.h"
 #include"cameraModule/CameraResult.h"
 
+#ifndef LOGFMTE
+#define LOGFMTE printf
+#endif
 
 
 #define LINUX32 1
@@ -1039,4 +1042,46 @@ bool Tool_GetTextNodeFromXML(const char *XmlInfoBuf, size_t xmlLength, const cha
 
         return true;
     }
+}
+
+bool Tool_GetDataAttributFromAppenedInfo(char *pszAppendInfo, std::string strItemName, std::string strAttributeName, char *pszRstBuf, int *piRstBufLen)
+{
+    if (pszAppendInfo == NULL || piRstBufLen == NULL || *piRstBufLen <= 0)
+    {
+        return false;
+    }
+
+    // <RoadNumber value="0" chnname="车道" />
+    // <StreetName value="" chnname="路口名称" />
+
+    std::string strAppendInfo = pszAppendInfo;
+    size_t siStart = strAppendInfo.find(strItemName);
+    if (siStart == std::string::npos)
+    {
+        return false;
+    }
+    siStart = strAppendInfo.find(strAttributeName, siStart+1);
+
+    siStart = strAppendInfo.find("\"", siStart + 1);
+    if (siStart == std::string::npos)
+    {
+        return false;
+    }
+    size_t siEnd = strAppendInfo.find("\"", siStart + 1);
+    if (siEnd == std::string::npos)
+    {
+        return false;
+    }
+
+    std::string strRst = strAppendInfo.substr(siStart + 1, siEnd - siStart - 1);
+    if (*piRstBufLen < (int)strRst.length())
+    {
+        *piRstBufLen = (int)strRst.length();
+        return false;
+    }
+
+    //strncpy_s(pszRstBuf, *piRstBufLen, strRst.c_str(), (int)strRst.length());
+    strncpy(pszRstBuf,  strRst.c_str(), (int)strRst.length());
+    *piRstBufLen = (int)strRst.length();
+    return true;
 }

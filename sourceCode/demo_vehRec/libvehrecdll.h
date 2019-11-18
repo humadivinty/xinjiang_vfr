@@ -91,6 +91,18 @@ int WINAPI VehRec_SetPlateDataFun(int handle,VehRec_PlateDataFunc*pCallBack);
  */
 int WINAPI VehRec_SetCarDataFun(int handle,VehRec_GetCarDataFun*pCallBack);
 
+/**
+ * @brief DLL_VehRec_CheckStatus
+ * @details 获取相机的连接状态
+ * @param handle
+ * @param chDevStatus, 输入输出参数，若连接正常，则返回GBK编码的字符串“连接正常”， 若连接异常，则返回GBK编码的字符串 “连接断开”
+ * @return 0		成功
+                 -1		输入参数错误
+                 -2		查找可用设备节点失败
+                 -3		失败
+ */
+int WINAPI VehRec_CheckStatus (int handle,char* chDevStatus);
+
 #ifdef __cplusplus
 }
 #endif

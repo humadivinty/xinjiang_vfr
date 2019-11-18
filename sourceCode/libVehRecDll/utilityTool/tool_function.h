@@ -96,4 +96,6 @@ int Tool_ProcessPlateNo(const char* srcPlateNum, char *buffer, size_t bufLen, ch
 // Parameter:    size_t bufLength：输入参数， 缓冲区大小
 //************************************
 bool Tool_GetTextNodeFromXML(const char* XmlInfoBuf, size_t xmlLength, const char* NodeName, char* ValueBuf, size_t bufLength);
+
+bool Tool_GetDataAttributFromAppenedInfo(char *pszAppendInfo, std::string strItemName, std::string  strAttributeName,char *pszRstBuf, int *piRstBufLen);
 #endif // TOOL_FUNCTION_H

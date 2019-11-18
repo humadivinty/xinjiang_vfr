@@ -166,3 +166,35 @@ int VehRec_SetCarDataFun(int handle, VehRec_GetCarDataFun *pCallBack)
     WRITE_LOG("finish, return %d", iRet);
     return iRet;
 }
+
+int VehRec_CheckStatus (int handle,char* chDevStatus)
+{
+    WRITE_LOG("begin, handle = %d, chDevStatus = %p", handle, chDevStatus);
+    int iRet = -1;
+    if(handle < BASIC_NUMBER)
+    {
+        WRITE_LOG("handle value is invalid.");
+        return iRet;
+    }
+
+    Camera6467_VFR* pCamera = (Camera6467_VFR*)DeviceListManager::GetInstance()->GetDeviceById(handle - BASIC_NUMBER);
+    if (pCamera != NULL)
+    {
+        WRITE_LOG("find the camer and set callback.");
+        if(0 ==pCamera->GetCamStatus())
+        {
+            strcpy(chDevStatus, "连接正常");
+        }
+        else
+        {
+            strcpy(chDevStatus, "连接断开");
+        }
+        iRet = 0;
+    }
+    else
+    {
+        WRITE_LOG("can not find camera by id %d", handle);
+    }
+    WRITE_LOG("finish, return %d", iRet);
+    return iRet;
+}

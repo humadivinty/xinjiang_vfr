@@ -9,21 +9,28 @@ OBJ := $(patsubst %.c,%.o, $(patsubst %.cpp,%.o, $(SRC)))
 PROGRAM = libVehRecDll.so
 
 
-CC := arm-none-linux-gnueabi-gcc
-CXX := arm-none-linux-gnueabi-g++
-AR := arm-none-linux-gnueabi-ar
-STRIP := arm-none-linux-gnueabi-strip
+#CC := gcc
+#CXX := g++
+#AR := ar
+#STRIP := strip
 #C/C++代码的宏定义
-CFLAG := -DLINUX  -D_GNU_SOURCE -Wno-psabi -O2 -fPIC -std=gnu++0x
+TARGET_PLATFORM =
+SUFFIX=
+CC =gcc
+CXX = g++
+AR = ar
+STRIP = strip
+#CFLAG = -DLINUX  -D_GNU_SOURCE -Wno-psabi -O2 -fPIC -std=c++11
+CFLAG = -DLINUX  -D_GNU_SOURCE -Wno-psabi -O2 -fPIC
 
-CXXFLAG := $(CFLAG)
+CXXFLAG = $(CFLAG)
 
 #连接库路径
-LIBPATH := ./libHvDevice
+LIBPATH = ./lib$(SUFFIX)
 
-BINPATH := ./bin
+BINPATH = ./bin$(SUFFIX)
 
-LDFLAG := -L$(LIBPATH) -lpthread -lrt -ldl -lHvdevice	
+LDFLAG = -L$(LIBPATH) -lpthread -lrt -ldl -lHvdevice	
 
 INC += -I.\
  -I.\cameraModule \
@@ -33,7 +40,15 @@ INC += -I.\
 -I.\utilityTool \
 
 #编译规则
-all:$(PROGRAM)
+X86:SUFFIX += _x86
+X86:CFLAG += -std=c++11
+X86:$(PROGRAM)
+
+
+_ARM:SUFFIX += _arm
+_ARM:TARGET_PLATFORM += arm-none-linux-gnueabi-
+_ARM:CFLAG += -std=gnu++0x
+_ARM:$(PROGRAM)
 
 #debug version
 debug:	CFLAG += -g3
@@ -50,15 +65,15 @@ W := -w
 #编译规则
 .c.o:
 	@echo "Compile $@"
-	$(Q)$(CC) $(CFLAG) -o $@ -c $< $(INC) $(W)
+	$(Q)$(TARGET_PLATFORM)$(CC) $(CFLAG) -o $@ -c $< $(INC) $(W)
 
 .cpp.o:
 	@echo "Compile $@"
-	$(Q)$(CXX) $(CXXFLAG) -o $@ -c $< $(INC) $(W)
+	$(Q)$(TARGET_PLATFORM)$(CXX) $(CXXFLAG) -o $@ -c $< $(INC) $(W)
 	
 	
 $(PROGRAM):$(OBJ)
-	$(Q)$(CXX) -shared -o $(PROGRAM) $(OBJ) $(LDFLAG) -fvisibility=hidden
+	$(Q)$(TARGET_PLATFORM)$(CXX) -shared -o $(PROGRAM) $(OBJ) $(LDFLAG) -fvisibility=hidden
 #	$(Q)rm *.o
 	$(Q)mkdir -p $(BINPATH)
 	$(Q)cp $@ $(BINPATH)/$@

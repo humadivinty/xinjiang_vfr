@@ -142,8 +142,11 @@ int BaseCamera::handleH264Frame(unsigned long dwVedioFlag,
     //OutputDebugStringA(chLog);
     //return SaveH264Frame(pbVideoData, dwVideoDataLen, dwWidth, dwHeight, isIFrame, dw64TimeMS, isHistory);
     m_video++;
-    if (m_video > 400)
+    if (m_video > VIDEO_FRAME_LIST_SIZE)
+    {
         m_video = 0;
+        WriteFormatLog("handleH264Frame:: receive h264 frame,dw64TimeMS =%llu .", dw64TimeMS);
+    }
 
     m_curH264Ms = dw64TimeMS;
 
@@ -205,6 +208,7 @@ int BaseCamera::handleH264_linux(unsigned char *pbVideoData,
     //return SaveH264Frame(pbVideoData, dwVideoDataLen, dwWidth, dwHeight, isIFrame, dw64TimeMS, isHistory);
     int iWidth = 0;
     int iHeight = 0;
+    unsigned long long dwFrameTime = 0;
     //提取视频的长和宽
     if( 0 == iWidth || 0 == iHeight )
     {
@@ -222,21 +226,28 @@ int BaseCamera::handleH264_linux(unsigned char *pbVideoData,
         {
             sscanf( pTempBuf, "Height:%d,", &iHeight );
         }
+        pTempBuf = strstr( szTemp, "FrameTime:" );
+        if( NULL != pTempBuf )
+        {
+            sscanf( pTempBuf, "FrameTime:%llu,", &dwFrameTime );
+        }
     }
     //printf("handleH264_linux:: get video width = %d, height = %d\n", iWidth, iHeight);
+//    struct tm timeNow;
+//    long long iTimeInMilliseconds = 0;
+//    Tool_GetTime(&timeNow, &iTimeInMilliseconds);
 
     m_video++;
-    if (m_video > 400)
+    if (m_video > VIDEO_FRAME_LIST_SIZE)
+    {
         m_video = 0;
+        WriteFormatLog("handleH264Frame:: receive h264 frame,dw64TimeMS =%lld .", dwFrameTime);
+    }
 
-    struct tm timeNow;
-    long long iTimeInMilliseconds = 0;
-    Tool_GetTime(&timeNow, &iTimeInMilliseconds);
-
-    m_curH264Ms = iTimeInMilliseconds;
+    m_curH264Ms = dwFrameTime;
     //printf("handleH264_linux iTimeInMilliseconds = %lld \n", iTimeInMilliseconds);
 
-    CustH264Struct* pH264Data = new CustH264Struct(pbVideoData, dwVideoDataLen, iWidth, iHeight, isIFrame, isHistory, iTimeInMilliseconds/* GetTickCount64()*/, m_video);
+    CustH264Struct* pH264Data = new CustH264Struct(pbVideoData, dwVideoDataLen, iWidth, iHeight, isIFrame, isHistory, dwFrameTime/* GetTickCount64()*/, m_video);
     pH264Data->index = m_video;
     if (!m_h264Saver.addDataStruct(pH264Data))
     {
@@ -329,9 +340,10 @@ bool BaseCamera::StartToSaveAviFile(int /*iStreamID*/, const char *fileName, lon
         return false;
     }    
 
-    long long timetick = m_curH264Ms - beginTimeTick;
-    if (timetick < 0)
-        timetick = 0;
+//    long long timetick = m_curH264Ms - beginTimeTick;
+//    if (timetick < 0)
+//        timetick = 0;
+    long long timetick = beginTimeTick;
 
     WriteFormatLog("StartToSaveAviFile, m_curH264Ms =%lld,  beginTimeTick = %lld, timetick = %lld. \n", m_curH264Ms, beginTimeTick, timetick );
 

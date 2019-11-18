@@ -26,6 +26,10 @@
 #define WM_USER 0x0400
 #endif
 
+#define VEHICLE_HEAD_NODE_NAME "Image2"
+#define VEHICLE_SIDE_NODE_NAME "Image3"
+#define VEHICLE_TAIL_NODE_NAME "Image4"
+
 Camera6467_VFR::Camera6467_VFR() :
 	BaseCamera(),
 	m_dwLastCarID(-1),
@@ -80,12 +84,39 @@ void Camera6467_VFR::AnalysisAppendXML(CameraResult* CamResult)
 {
 	if (NULL == CamResult)
 		return;
-	if (0 != CamResult->dw64TimeMS)
-	{
+
+	char chTemp[BUFFERLENTH] = { 0 };
+	int iLenth = BUFFERLENTH;
+
+    if (Tool_GetDataAttributFromAppenedInfo(CamResult->pcAppendInfo, VEHICLE_SIDE_NODE_NAME, "TimeHigh", chTemp, &iLenth))
+    {
+        DWORD64 iTime = 0;
+        DWORD64 iTimeHight = 0;
+
+        //sscanf_s(chTemp, "%llu", &iTimeHight);
+        sscanf(chTemp, "%llu", &iTimeHight);
+        iTime = iTimeHight << 32;
+
+        memset(chTemp, 0, sizeof(chTemp));
+        iLenth = BUFFERLENTH;
+
+        if (Tool_GetDataAttributFromAppenedInfo(CamResult->pcAppendInfo, VEHICLE_SIDE_NODE_NAME, "TimeLow", chTemp, &iLenth))
+        {
+            DWORD64 iTimeLow = 0;
+            //sscanf_s(chTemp, "%llu", &iTimeLow);
+            sscanf(chTemp, "%llu", &iTimeLow);
+            iTime |= iTimeLow ;
+        }
+        WriteFormatLog("GET carArrive time iTimeLow %llu", iTime);
+        CamResult->dw64TimeMS = iTime;
+    }
+
+    if (0 != CamResult->dw64TimeMS)
+    {
         ConverTimeTickToString(CamResult->dw64TimeMS, CamResult->chPlateTime, sizeof(CamResult->chPlateTime));
-	}
-	else
-	{
+    }
+    else
+    {
         struct tm timeNow;
         long long iTimeInMilliseconds = 0;
         Tool_GetTime(&timeNow, &iTimeInMilliseconds);
@@ -98,10 +129,7 @@ void Camera6467_VFR::AnalysisAppendXML(CameraResult* CamResult)
             timeNow.tm_min,
             timeNow.tm_sec,
             iTimeInMilliseconds%1000);
-	}
-
-	char chTemp[BUFFERLENTH] = { 0 };
-	int iLenth = BUFFERLENTH;
+    }
 
 	memset(chTemp, '\0', sizeof(chTemp));
 	iLenth = BUFFERLENTH;
@@ -1128,12 +1156,12 @@ int Camera6467_VFR::RecordInfoEnd(unsigned long dwCarID)
         if(m_bStartSaveVideo)
         {
             //sleep(1);
-            struct tm TimeNow;
-            long long  iCurrentTime = 0;
-            Tool_GetTime(&TimeNow, &iCurrentTime);
-            StopSaveAviFile(0, iCurrentTime + getVideoDelayTime() * 1000);
+//            struct tm TimeNow;
+//            long long  iCurrentTime = 0;
+//            Tool_GetTime(&TimeNow, &iCurrentTime);
+            StopSaveAviFile(0, m_pResult->dw64TimeMS + getVideoDelayTime() * 1000);
 
-            WriteFormatLog("StopSaveAviFile , iCurrentTime = %lld, delay time = %d",iCurrentTime,  getVideoDelayTime());
+            WriteFormatLog("StopSaveAviFile , iCurrentTime = %llu, delay time = %d",m_pResult->dw64TimeMS,  getVideoDelayTime());
             m_bStartSaveVideo = false;
         }
 
@@ -1300,7 +1328,7 @@ int Camera6467_VFR::RecordInfoPlate(unsigned long dwCarID,
                 //sprintf(chAviPath, "%s\\%s\\%lu-%llu.avi", m_chSavePath, m_pResult->chPlateTime, dwCarID, m_pResult->dw64TimeMS);
                 sprintf(chAviPath, "%s/%s/%lu-%llu.avi", m_chSavePath, m_pResult->chPlateTime, dwCarID, m_pResult->dw64TimeMS);
                 //qDebug()<<"chAviPath ="<<chAviPath;
-                StartToSaveAviFile(0, chAviPath, getVideoAdvanceTime()*1000);
+                StartToSaveAviFile(0, chAviPath, m_pResult->dw64TimeMS - getVideoAdvanceTime()*1000);
                 memset(m_pResult->chSavePath, '\0', sizeof(m_pResult->chSavePath));
                 memcpy(m_pResult->chSavePath, chAviPath, strlen(chAviPath));
 

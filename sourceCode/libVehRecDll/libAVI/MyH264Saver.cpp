@@ -92,11 +92,11 @@ bool MyH264Saver::addDataStruct(CustH264Struct* pDataStruct)
 bool MyH264Saver::StartSaveH264(long long beginTimeStamp, const char* pchFilePath)
 {
     //qDebug()<< "StartSaveH264 :"<< "beginTimeStamp "<< beginTimeStamp;
-	SetSavePath(pchFilePath, strlen(pchFilePath));
-	SetTimeFlag(beginTimeStamp);
-	SetStopTimeFlag(TIME_FLAG_UNDEFINE);
-	SetIfFirstSave(true); 
     SetSaveFlag(SAVING_FLAG_SAVING);
+    SetStopTimeFlag(TIME_FLAG_UNDEFINE);
+    SetIfFirstSave(true);
+    SetTimeFlag(beginTimeStamp);
+    SetSavePath(pchFilePath, strlen(pchFilePath));
 	m_lastvideoidx = -1;
     return true;
 }
@@ -129,7 +129,7 @@ unsigned long WINAPI MyH264Saver::H264DataProceesor(LPVOID lpThreadParameter)
 //}
 #endif
 
-unsigned long MyH264Saver::processH264Data()
+unsigned long MyH264Saver::processH264Data_0()
 {
     WriteFormatLog("MyH264Saver::processH264Data begin.\n");
     int  iSaveFlag = 0;
@@ -254,7 +254,7 @@ unsigned long MyH264Saver::processH264Data()
                     if(iLastTimeFlag == -1
                             || iLastIndex == -1
                             || ( ( iCurrentFrameTimeFlag > iLastTimeFlag) && ( iCurrentFrameIndex == iLastIndex + 1  )   )
-                            || ( ( iCurrentFrameTimeFlag > iLastTimeFlag) && ( iCurrentFrameIndex == 0  ) && iLastIndex == 400  )
+                            || ( ( iCurrentFrameTimeFlag > iLastTimeFlag) && ( iCurrentFrameIndex == 0  ) && iLastIndex == VIDEO_FRAME_LIST_SIZE  )
                             )
                     {
 //                        WriteFormatLog("iCurrentTimeFlag (%lld) > iVideoBeginTimeFlag (%lld),and < video stop time(%lld) save frame, index = %d",
@@ -346,6 +346,238 @@ unsigned long MyH264Saver::processH264Data()
 
      WriteFormatLog("MyH264Saver::processH264Data finish.\n");
      return 0;
+}
+
+unsigned long MyH264Saver::processH264Data()
+{
+    WriteFormatLog("MyH264Saver::processH264Data begin.\n");
+      int  iSaveFlag = 0;
+      int iVideoWidth = -1;
+      int iVideoHeight = -1;
+
+      int iFlag = 1;
+
+      long long iCurrentFrameTimeFlag = -1;
+      long long iLastTimeFlag = -1;
+      long long iVideoStopTimeFlag = -1;
+
+      long long iLastSaveFlag = -1;
+      long long iVideoBeginTimeFlag = -1;
+      long long iTimeNowFlag = -1;
+
+      int iLastIndex = -1;
+      int iCurrentFrameIndex = -1;
+      while (!GetIfExit())
+      {
+          //Sleep(50);
+  #ifdef WINDOWS
+          EnterCriticalSection(&m_DataListLocker);
+  #else
+          m_DataListLocker.lock();
+  #endif
+          if (m_lDataStructList.size() <= 0)
+          {
+  #ifdef WINDOWS
+              LeaveCriticalSection(&m_DataListLocker);
+  #else
+              m_DataListLocker.unlock();
+  #endif
+              //printf("MyH264Saver::processH264Data m_lDataStructList.size() <= 0 \n");
+              usleep(10 * 1000);
+              //Sleep(10);
+              continue;
+          }
+  #ifdef WINDOWS
+          LeaveCriticalSection(&m_DataListLocker);
+  #else
+          m_DataListLocker.unlock();
+  #endif
+          char buf[256] = { 0 };
+          //iVideoStopTimeFlag = GetStopTimeFlag();
+          iVideoBeginTimeFlag = GetTimeFlag();
+          iTimeNowFlag = Tool_GetTickCount();
+
+          //        if( iStopTimeFlag != TIME_FLAG_UNDEFINE
+          //                &&  iTimeNowFlag > iStopTimeFlag )
+          //        {
+          //            //qDebug()<< "GetStopTimeFlag "  <<GetStopTimeFlag() << "< "<< "GetTickCount" <<GetTickCount();
+          //            iSaveFlag = SAVING_FLAG_SHUT_DOWN;
+          //            SetStopTimeFlag(TIME_FLAG_UNDEFINE);
+          //        }
+          //        else
+          {
+              iSaveFlag = GetSaveFlag();
+          }
+
+          if (iSaveFlag != iLastSaveFlag)
+          {
+              WriteFormatLog("stop time flag change, lastStopTimeFlag = %lld, current Stop time flag = %lld, system time Now = %lld,  video beginTIme = %lld, save flag = %d\n",
+                  iLastSaveFlag,
+                  iVideoStopTimeFlag,
+                  iTimeNowFlag,
+                  iVideoBeginTimeFlag,
+                  iSaveFlag);
+              iLastSaveFlag = iSaveFlag;
+          }
+
+          std::shared_ptr<CustH264Struct > pData = nullptr;
+          switch (iSaveFlag)
+          {
+          case SAVING_FLAG_NOT_SAVE:
+              usleep(10 * 1000);
+              //printf("MyH264Saver::processH264Data SAVING_FLAG_NOT_SAVE, break \n");
+              //Sleep(10);
+              break;
+          case SAVING_FLAG_SAVING:
+              //printf("MyH264Saver::processH264Data SAVING_FLAG_SAVING \n",GetSavePath() );
+  #ifdef WINDOWS
+              EnterCriticalSection(&m_DataListLocker);
+  #else
+              m_DataListLocker.lock();
+  #endif
+
+              //pData = m_lDataStructList.front();
+              //m_lDataStructList.pop_front();
+
+              for (auto r = m_lDataStructList.begin(); r != m_lDataStructList.end(); )
+              {
+                  pData = (*r);
+                  iCurrentFrameTimeFlag = pData->m_llFrameTime;
+                  iCurrentFrameIndex = pData->index;
+                  //iStopTimeFlag = GetTimeFlag();
+                  if (iCurrentFrameTimeFlag < iVideoBeginTimeFlag)
+                  {
+                      WriteFormatLog("iCurrentFrameTimeFlag (%lld) < iVideoBeginTimeFlag (%lld), erase frame, index = %d",
+                          iCurrentFrameTimeFlag,
+                          iVideoBeginTimeFlag,
+                          iCurrentFrameIndex);
+                      pData = nullptr;
+                      r = m_lDataStructList.erase(r);
+                      //r++;
+                      continue;
+                  }
+                  else
+                  {
+                      iVideoStopTimeFlag = GetStopTimeFlag();
+                      if (iVideoStopTimeFlag != TIME_FLAG_UNDEFINE
+                          && iCurrentFrameTimeFlag >= iVideoStopTimeFlag)
+                      {
+                          WriteFormatLog(" iStopTimeFlag != TIME_FLAG_UNDEFINE  && iCurrentTimeFlag (%lld) >= iStopTimeFlag (%lld), change saveFlag ",
+                              iCurrentFrameTimeFlag,
+                              iVideoStopTimeFlag);
+                          SetSaveFlag(SAVING_FLAG_SHUT_DOWN);
+
+                          iLastTimeFlag = -1;
+                          iLastIndex = -1;
+
+                          break;
+                      }
+                      else
+                      {
+                          if (iLastTimeFlag == -1
+                              || iLastIndex == -1
+                              || ((iCurrentFrameTimeFlag > iLastTimeFlag) && (iCurrentFrameIndex == iLastIndex + 1))
+                              || ((iCurrentFrameTimeFlag > iLastTimeFlag) && (iCurrentFrameIndex == 0) && iLastIndex == VIDEO_FRAME_LIST_SIZE)
+                              )
+                          {
+                              WriteFormatLog("iCurrentFrameTimeFlag (%lld) > iVideoBeginTimeFlag (%lld),and < video stop time(%lld) save frame, index = %d, iLastTimeFlag = %lld, iLastIndex = %d",
+                                  iCurrentFrameTimeFlag,
+                                  iVideoBeginTimeFlag,
+                                  iVideoStopTimeFlag,
+                                  iCurrentFrameIndex,
+                                  iLastTimeFlag,
+                                  iLastIndex);
+
+                              iLastTimeFlag = iCurrentFrameTimeFlag;
+                              iLastIndex = iCurrentFrameIndex;
+
+                              break;
+                          }
+                          else
+                          {
+                              WriteFormatLog("iCurrentFrameTimeFlag (%lld) > iVideoBeginTimeFlag (%lld),and < video stop time(%lld) but nosave frame, index = %d, iLastTimeFlag = %lld, iLastIndex = %d",
+                                  iCurrentFrameTimeFlag,
+                                  iVideoBeginTimeFlag,
+                                  iVideoStopTimeFlag,
+                                  iCurrentFrameIndex,
+                                  iLastTimeFlag,
+                                  iLastIndex);
+                              pData = nullptr;
+
+                              r++;
+                          }
+                      }
+
+                  }
+              }
+
+  #ifdef WINDOWS
+              LeaveCriticalSection(&m_DataListLocker);
+  #else
+              m_DataListLocker.unlock();
+  #endif
+
+              if (pData == nullptr)
+              {
+                  //printf("MyH264Saver::processH264Data SAVING_FLAG_SAVING  pData == nullptr\n" );
+                  break;
+              }
+
+              iVideoWidth = pData->m_iWidth;
+              iVideoHeight = pData->m_iHeight;
+              if (GetIfFirstSave())
+              {
+                  if (!m_264AviLib.IsNULL())
+                  {
+                      iLastIndex = -1;
+                      WriteFormatLog("m_264AviLib.IsNULL == false, close file.\n");
+                      m_264AviLib.close();
+                  }
+                  if (iVideoWidth > 0
+                      && iVideoHeight > 0)
+                  {
+                      WriteFormatLog("m_264AviLib.setAviInfo , %s.\n", GetSavePath());
+                      m_264AviLib.setAviInfo((char*)GetSavePath(), iVideoWidth, iVideoHeight, 25, "H264");
+                      SetIfFirstSave(false);
+                  }
+              }
+
+              if (!m_264AviLib.IsNULL()
+                  && pData->m_llFrameTime > GetTimeFlag()
+                  )
+              {
+                  iFlag = m_264AviLib.writeFrame((char*)pData->m_pbH264FrameData, pData->m_iDataSize, pData->m_isIFrame);
+                  if (iFlag != 0)
+                  {
+                      WriteFormatLog(" m_264AviLib.writeFrame = %d\n", iFlag);
+                  }
+                  //SetIfFirstSave(false);
+              }
+              pData = nullptr;
+              break;
+          case SAVING_FLAG_SHUT_DOWN:
+              if (!m_264AviLib.IsNULL())
+              {
+                  m_iTmpTime = 0;
+                  m_264AviLib.close();
+                  //SetSaveFlag(SAVING_FLAG_NOT_SAVE);
+                  WriteFormatLog("m_264AviLib.close SAVING_FLAG_SHUT_DOWN.\n", GetSavePath());
+              }
+              else
+              {
+                  WriteFormatLog("MyH264Saver::processH264Data SAVING_FLAG_SHUT_DOWN m_264AviLib.IsNULL.\n", GetSavePath());
+              }
+              SetSaveFlag(SAVING_FLAG_NOT_SAVE);
+              break;
+          default:
+              WriteFormatLog("MyH264Saver::processH264Data default break.\n", GetSavePath());
+              break;
+          }
+
+      }
+
+      WriteFormatLog("MyH264Saver::processH264Data finish.\n");
+      return 0;
 }
 
 unsigned long MyH264Saver::processH264Data_old()
@@ -777,7 +1009,7 @@ const char* MyH264Saver::GetSavePath()
 
 void MyH264Saver::WriteFormatLog(const char *szfmt, ...)
 {
-    return;
+    //return;
 
     static char g_szString[10240] = { 0 };
     memset(g_szString, 0, sizeof(g_szString));

@@ -11,4 +11,5 @@ void SendCarMotionSignal();
 void SetPlateCallback();
 void SetCarInfoCallback();
 bool Tool_MyMakeDir( const char* chImgPath);
+void CheckCameraStatus();
 #endif // TESTFUNC_H
