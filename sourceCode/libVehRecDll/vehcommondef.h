@@ -5,7 +5,7 @@
 #define WINAPI
 #endif
 
-
+//#pragma pack (1)
 typedef struct
 {
     int		ID;					//ID号
@@ -40,7 +40,7 @@ typedef struct
     char		plateColor[5];			//车头车牌颜色，包括蓝、白、黑、黄、绿、无
     char		headpic[260];			//车头大图或车牌图绝对路径
 }SPlateInfoResult;
-
+//#pragma pack ()
 /**
  *功能	获取车头信息的回调函数
  *传入参数      handle	设备句柄

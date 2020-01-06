@@ -36,11 +36,13 @@ m_iIndex(0),
 m_bLogEnable(true),
 m_bSynTime(true),
 m_bThreadCreateSussess(false),
+  m_bVideoLogEnable(false),
 m_strIP("")
 {
     memset(m_chLogPath, '\0', sizeof(m_chLogPath));
     memset(m_chSavePath, '\0', sizeof(m_chSavePath));
     ReadConfig();
+    m_h264Saver.SetLogEnable(m_bVideoLogEnable);
 }
 
 BaseCamera::~BaseCamera()
@@ -661,6 +663,9 @@ void BaseCamera::ReadConfig()
     iTemp = 2;
     Tool_ReadIntValueFromConfigFile(INI_FILE_NAME, "Video", "DelayTime", iTemp);
     m_iVideoDelayTime = iTemp;
+    iTemp = 0;
+    Tool_ReadIntValueFromConfigFile(INI_FILE_NAME, "Video", "LogEnable", iTemp);
+    m_bVideoLogEnable = iTemp > 0 ? true : false;
 
     char chTemp[256] = { 0 };
     //    sprintf(chTemp, "%d", iLog);

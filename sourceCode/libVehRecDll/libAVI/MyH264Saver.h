@@ -7,6 +7,8 @@
 #include <memory>
 #include <deque>
 #include "utilityTool/tool_function.h"
+#include "libMp4/cMp4Encode.h"
+#include "MyH264Vector.h"
 
 #define VIDEO_FRAME_LIST_SIZE (3000)
 
@@ -28,11 +30,13 @@ public:
 #ifdef WINDOWS
     static DWORD WINAPI  H264DataProceesor( LPVOID lpThreadParameter);
 #else
-     // void*  H264DataProceesor( void* lpThreadParameter);
+      static void*  H264DataProceesor( void* lpThreadParameter);
 #endif
-    unsigned long processH264Data();
-    unsigned long processH264Data_old();
-    unsigned long processH264Data_0();
+
+    unsigned long processH264Data_mp4();
+
+    void SetLogEnable(bool bValue);
+    bool GetLogEnable();
 private:
     void SetIfExit(bool bValue);
     bool GetIfExit();
@@ -40,8 +44,8 @@ private:
     void SetSaveFlag(int iValue);
     int GetSaveFlag();
 
-    void SetTimeFlag(long long  iValue);
-    long long  GetTimeFlag();
+    void SetStartTimeFlag(long long  iValue);
+    long long  GetStartTimeFlag();
 
     void SetStopTimeFlag(long long  iValue);
     long long  GetStopTimeFlag();
@@ -53,22 +57,24 @@ private:
     const char* GetSavePath();
 
     void WriteFormatLog(const char* szfmt, ...);
-
 private:
 
     bool m_bExit;    
     bool m_bFirstSave;
+    bool m_bLogEnable;
     int m_iSaveH264Flag;        //   0--not save  ; 1--saving ; 2--shut down saving
     long long m_iTimeFlag;
     long long M_iStopTimeFlag;
 
     char m_chFilePath[256];
+    char m_chLogBuf[10240];
 
     long long m_iTmpTime;
 	int m_lastvideoidx;
 
     //TemplateThreadSafeList<std::shared_ptr<CustH264Struct > > m_lDataStructList;
-    std::deque<std::shared_ptr<CustH264Struct > > m_lDataStructList;
+    //std::deque<std::shared_ptr<CustH264Struct > > m_lDataStructList;
+    MyH264DataVector m_lDataStructList;
 #ifdef WINDOWS
 	CRITICAL_SECTION m_DataListLocker;
 
@@ -83,6 +89,7 @@ private:
 #endif
 
     CAviLib m_264AviLib;
+    CMp4Encode m_264Mp4Lib;
 };
 
 #endif // MYH264SAVER_H

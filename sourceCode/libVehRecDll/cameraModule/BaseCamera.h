@@ -191,6 +191,7 @@ protected:
     int m_video;
     int m_iVideoAdvanceTime;
     int m_iVideoDelayTime;
+    bool m_bVideoLogEnable;
 
     long long m_curH264Ms;
 

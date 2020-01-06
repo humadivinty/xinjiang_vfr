@@ -102,10 +102,13 @@ void Camera6467_VFR::AnalysisAppendXML(CameraResult* CamResult)
 
         if (Tool_GetDataAttributFromAppenedInfo(CamResult->pcAppendInfo, VEHICLE_SIDE_NODE_NAME, "TimeLow", chTemp, &iLenth))
         {
-            DWORD64 iTimeLow = 0;
-            //sscanf_s(chTemp, "%llu", &iTimeLow);
-            sscanf(chTemp, "%llu", &iTimeLow);
-            iTime |= iTimeLow ;
+//            DWORD64 iTimeLow = 0;
+//            //sscanf_s(chTemp, "%llu", &iTimeLow);
+//            sscanf(chTemp, "%llu", &iTimeLow);
+//            iTime |= iTimeLow ;
+            unsigned long  iTimeLow = 0;
+            sscanf(chTemp, "%lu", &iTimeLow);
+            iTime += iTimeLow;
         }
         WriteFormatLog("GET carArrive time iTimeLow %llu", iTime);
         CamResult->dw64TimeMS = iTime;
@@ -615,6 +618,14 @@ bool Camera6467_VFR::SendCompleteResultByCallback(CameraResult *CamResult)
         {
             memset(completeResult.carTypeStr, '\0', sizeof(completeResult.carTypeStr));
             sprintf(completeResult.carTypeStr,"%s", CamResult->chVehicleType);
+            WriteFormatLog("SCarInfoResult.carTypeStr = %s, SCarInfoResult.carTypeStr[0]= %d, SCarInfoResult.carTypeStr[1]= %d, SCarInfoResult.carTypeStr[2] = %d, SCarInfoResult.carTypeStr[3]= %d ,SCarInfoResult.carTypeStr[4] = %d, SCarInfoResult.carTypeStr[5] = %d \n",
+                           completeResult.carTypeStr,
+                           completeResult.carTypeStr[0],
+                    completeResult.carTypeStr[1],
+                    completeResult.carTypeStr[2],
+                    completeResult.carTypeStr[3],
+                    completeResult.carTypeStr[4],
+                    completeResult.carTypeStr[5]);
         }
         WriteFormatLog("begin to process begin CIMG_BeginCapture.\n");
         CameraIMG* pImage = &(CamResult->CIMG_BeginCapture);
@@ -1326,7 +1337,8 @@ int Camera6467_VFR::RecordInfoPlate(unsigned long dwCarID,
             {
                 memset(chAviPath, '\0', sizeof(chAviPath));
                 //sprintf(chAviPath, "%s\\%s\\%lu-%llu.avi", m_chSavePath, m_pResult->chPlateTime, dwCarID, m_pResult->dw64TimeMS);
-                sprintf(chAviPath, "%s/%s/%lu-%llu.avi", m_chSavePath, m_pResult->chPlateTime, dwCarID, m_pResult->dw64TimeMS);
+                //sprintf(chAviPath, "%s/%s/%lu-%llu.avi", m_chSavePath, m_pResult->chPlateTime, dwCarID, m_pResult->dw64TimeMS);
+                sprintf(chAviPath, "%s/%s/%lu-%llu.mp4", m_chSavePath, m_pResult->chPlateTime, dwCarID, m_pResult->dw64TimeMS);
                 //qDebug()<<"chAviPath ="<<chAviPath;
                 StartToSaveAviFile(0, chAviPath, m_pResult->dw64TimeMS - getVideoAdvanceTime()*1000);
                 memset(m_pResult->chSavePath, '\0', sizeof(m_pResult->chSavePath));

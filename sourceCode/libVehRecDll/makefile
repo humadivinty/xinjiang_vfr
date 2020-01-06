@@ -30,7 +30,7 @@ LIBPATH = ./lib$(SUFFIX)
 
 BINPATH = ./bin$(SUFFIX)
 
-LDFLAG = -L$(LIBPATH) -lpthread -lrt -ldl -lHvdevice	
+LDFLAG = -L$(LIBPATH) -lpthread -lrt -ldl -lHvdevice	-lmp4v2
 
 INC += -I.\
  -I.\cameraModule \
@@ -38,6 +38,7 @@ INC += -I.\
 -I.\libHvDevice \
  -I.\tinyxml \
 -I.\utilityTool \
+-I.\libMp4\include \
 
 #编译规则
 X86:SUFFIX += _x86
